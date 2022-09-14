@@ -25,9 +25,10 @@ bool check_lose();
 
 const unsigned int SCRENE_COL = 5;
 const unsigned int SCRENE_ROW = 5;
+const unsigned int TOTAL_ROW = 15;
 const unsigned int GRID_WIDTH = 16;
 
-unsigned int data_matrix[15][SCRENE_COL];
+unsigned int data_matrix[TOTAL_ROW][SCRENE_COL];
 
 unsigned int screne_bottom = 0;
 
@@ -48,7 +49,6 @@ void main(void){
     enum state{
         START, MAKE_ALIAN, COUNT_DOWN, GAMING, WIN, LOSE
     };
-//    unsigned int data_matrix[15][SCRENE_COL];
     unsigned int level = 1;
     unsigned long loop_counter = 0;
     enum state state = START;
@@ -365,6 +365,7 @@ void add_to_screne(int content, int grid_x, int grid_y){
     dispThree[0] = ' ';
     dispThree[2] = ' ';
     dispThree[1] = content+'0';
+//    dispThree[1] = '*';
 
     int x = (grid_x+1)*GRID_WIDTH;
     int y = (grid_y+1)*GRID_WIDTH;
@@ -384,7 +385,7 @@ void display_on_screne(){
         dispThree[1] = row_num+'0';
         // count y from bottom
         y = (SCRENE_ROW - i)*GRID_WIDTH;
-        Graphics_drawStringCentered(&g_sContext, dispThree, 3, 10, y, 0);
+//        Graphics_drawStringCentered(&g_sContext, dispThree, 3, 10, y, 0);
 
     }
 
@@ -428,8 +429,8 @@ void generate_alian(int level){
     int i = 0;
     int j = 0;
     int num = 0;
-    for (i=0; i<=SCRENE_ROW; i++)
-        for (j=0; j<=SCRENE_COL; j++)
+    for (i=0; i<TOTAL_ROW; i++)
+        for (j=0; j<SCRENE_COL; j++)
             data_matrix[i][j] = 0;
 
 //    Graphics_clearDisplay(&g_sContext);
@@ -498,7 +499,7 @@ void modify_array(){
 
 bool check_win(){
     unsigned int row = 0, col = 0, data = 0;
-    for(row=0; row<15; row++){
+    for(row=0; row<TOTAL_ROW; row++){
         for(col=0; col<SCRENE_COL; col++){
             data = data_matrix[row][col];
             if (data != 0)

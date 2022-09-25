@@ -5,7 +5,9 @@
 *.out
 
 Debug/*
+/Debug/
 
 **/.DS_Store
 
 /.metadata/
+ece2049a22_lab1/.project

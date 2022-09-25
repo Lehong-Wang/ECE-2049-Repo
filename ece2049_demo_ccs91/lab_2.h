@@ -10,9 +10,10 @@
 
 
 #include "peripherals.h"
+#include "lab_1.h"
 
 
-extern const unsigned short NOTE_TABLE[];
+extern const unsigned int NOTE_TABLE[];
 
 
 
@@ -25,7 +26,6 @@ void ParseSong(unsigned char* song_array_pointer);
 void TurnBuzzerOn(unsigned int frequency);
 void TurnBuzzerOff(void);
 
-void swDelay(unsigned char numLoops);
 
 
 

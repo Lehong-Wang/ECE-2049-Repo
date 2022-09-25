@@ -8,7 +8,7 @@
 # include "lab_2.h"
 
 
-const unsigned short NOTE_TABLE[] =
+const unsigned int NOTE_TABLE[] =
         {
          440,   // A
          466,   // B flat
@@ -34,17 +34,18 @@ void ParseSong(unsigned char* song_array_pointer){
     unsigned char* current_pointer = song_array_pointer;
     unsigned char current_note_pack = *current_pointer;
     unsigned char note_index;
-    unsigned char note;
+    unsigned int note;
     unsigned char duration;
 
 
     while (current_note_pack != 0){
         // lower 4 bit is note, higher 4 bit is duration
         note_index = current_note_pack & 0x0f;
-        duration = current_note_pack & 0xf0 >> 4;
+        duration = (current_note_pack & 0xf0) >> 4;
         note = NOTE_TABLE[note_index];
 
         TurnBuzzerOn(note);
+        show_on_screne(note + 1000*duration);
         swDelay(duration);
 
 //        break;
@@ -86,7 +87,7 @@ void TurnBuzzerOn(unsigned int frequency)
     // Now configure the timer period, which controls the PWM period
     // Doing this with a hard coded values is NOT the best method
     // We do it here only as an example. You will fix this in Lab 2.
-    TB0CCR0   = frequency;                    // Set the PWM period in ACLK ticks
+    TB0CCR0   = (unsigned int) 32768 / frequency;                    // Set the PWM period in ACLK ticks
     TB0CCTL0 &= ~CCIE;                  // Disable timer interrupts
 
     // Configure CC register 5, which is connected to our PWM pin TB0.5
@@ -109,27 +110,6 @@ void TurnBuzzerOff(void)
 
 
 
-
-void swDelay(unsigned char numLoops)
-{
-    // This function is a software delay. It performs
-    // useless loops to waste a bit of time
-    //
-    // Input: numLoops = number of delay loops to execute
-    // Output: none
-    //
-    // smj, ECE2049, 25 Aug 2021
-
-    volatile unsigned int i,j;  // volatile to prevent removal in optimization
-                                // by compiler. Functionally this is useless code
-
-    for (j=0; j<numLoops; j++)
-    {
-        i = 50000 ;                 // SW Delay
-        while (i > 0)               // could also have used while (i)
-           i--;
-    }
-}
 
 
 

@@ -24,36 +24,41 @@ void main(void)
 {
     init();
 
-//    printf("%d",NOTE_TABLE[1]);
+    InitTimerA2();
+    Graphics_clearDisplay(&g_sContext);
+    Graphics_drawStringCentered(&g_sContext, "YOU WIN !", AUTO_STRING_LENGTH, 48, 20, TRANSPARENT_TEXT);
+    Graphics_drawStringCentered(&g_sContext, "* to continue", AUTO_STRING_LENGTH, 48, 60, TRANSPARENT_TEXT);
+    Graphics_drawStringCentered(&g_sContext, "# to restart", AUTO_STRING_LENGTH, 48, 80, TRANSPARENT_TEXT);
+    Graphics_flushBuffer(&g_sContext);
 
+    main_loop();
 
+    // while (true){
+    //     if (getKey() == '*'){
+    //         TurnBuzzerOn(128);
+    //     }
 
-    while (true){
-        if (getKey() == '*'){
-            TurnBuzzerOn(128);
-        }
+    //     if (getKey() == '#'){
+    //         TurnBuzzerOff();
+    //     }
 
-        if (getKey() == '#'){
-            TurnBuzzerOff();
-        }
+    //     if (getKey() == '0'){
+    //         ParseSong((unsigned char*) &demo_song);
+    //     }
 
-        if (getKey() == '0'){
-            ParseSong((unsigned char*) &demo_song);
-        }
+    //     if (getKey() == '1'){
+    //         TurnBuzzerOn(256);
+    //     }
 
-        if (getKey() == '1'){
-            TurnBuzzerOn(256);
-        }
+    //     if (getKey() == '2'){
+    //         TurnBuzzerOn(512);
+    //     }
 
-        if (getKey() == '2'){
-            TurnBuzzerOn(512);
-        }
+    //     if (getKey() == '3'){
+    //         TurnBuzzerOn(300);
+    //     }
 
-        if (getKey() == '3'){
-            TurnBuzzerOn(300);
-        }
-
-    }
+    // }
 
 
 
@@ -78,10 +83,8 @@ void init(){
 
     // *** Intro Screen ***
     Graphics_clearDisplay(&g_sContext); // Clear the display
+
 }
-
-
-
 
 
 

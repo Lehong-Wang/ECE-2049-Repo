@@ -10,7 +10,7 @@
 
 const unsigned int NOTE_TABLE[] =
         {
-         440,   // A
+         440,   // A4           // 0
          466,   // B flat
          494,   // B
          523,   // C
@@ -18,13 +18,24 @@ const unsigned int NOTE_TABLE[] =
          587,   // D
          622,   // E flat (Eb)
          659,   // E
-         698,   // F
+         698,   // F            // 8
          740,   // F sharp
          784,   // G
          831,   // A flat
-         880,   // A
-         1300,
-         1500,
+         880,   // A5
+         932,   // B flat
+         988,   // B
+         1046,  // C
+         1109,  // C sharp      // 16
+         1175,  // D
+         1244,   // E flat
+         1318,   // E
+         1397,   // F
+         1479,   // F sharp
+         1568,   // G
+         1661,   // A flat
+         1760,   // A6          // 24
+
         };
 
 unsigned long timer = 0;
@@ -40,6 +51,7 @@ unsigned char line4[GRAPH_LEN];
 
 /*
  * Function for testing
+ * 4 bit duration, 4 bit index
  */
 void ParseSong(unsigned char* song_array_pointer){
     unsigned char* current_pointer = song_array_pointer;
@@ -129,7 +141,7 @@ void main_loop(void){
 
     unsigned char note_index = 0;
     unsigned int note = 0xff;
-    unsigned char duration = 0xff;
+    unsigned char duration = 0x1;
 
     unsigned char pressed_key = 0;
     unsigned char miss_num = 0;
@@ -141,10 +153,15 @@ void main_loop(void){
     // bit 0-4: note index
     // bit 5-7: note duration
     // duration 765 | 43210 index
+    // eg. 0x56 -> duration = 0x2, index = 0x16
+    // index 0x1F is reserved for scilent note
 
-    const unsigned char demo_song[] = {0x11, 0x16, 0x15, 0x14, 0x13, 0x12, 0x11, 0x00};
-    const unsigned char bebo_song[] = {0x11, 0x26, 0x11, 0x26, 0x1C, 0x2D, 0x1C, 0x2D, 0x00};
-    const unsigned char Hanabi[] = {0x17, 0x1F, 0x1A, 0x2C, 0x18, 0x15, 0x13, 0x12, 0x15, 0x18, 0x3A, 0x1A, 0x18, 0x27, 0x2A, 0x18, 0x25, 0x15, 0x17, 0x1F, 0x1A, 0x2C, 0x18, 0x15, 0x13, 0x12, 0x15, 0x18, 0x3A, 0x1A, 0x18, 0x27, 0x2A, 0x18, 0x15, 0x15, 0x25, 0x47, 0x00};
+    const unsigned char demo_song[] = {0x21, 0x26, 0x25, 0x34, 0x33, 0x22, 0x21, 0x00};
+    const unsigned char bebo_song[] = {0x21, 0x26, 0x21, 0x26, 0x2C, 0x2D, 0x2C, 0x2D, 0x00};
+    const unsigned char Hanabi[] = {0x27, 0x3F, 0x2A, 0x4C, 0x28, 0x25, 0x23, 0x22, 0x25, 0x28, 0x6A, 0x2A, 0x28, 0x47, 0x4A, 0x28, 0x45, 0x25, 0x27, 0x3F, 0x2A, 0x4C, 0x28, 0x25, 0x23, 0x22, 0x25, 0x28, 0x6A, 0x2A, 0x28, 0x47, 0x4A, 0x28, 0x25, 0x25, 0x45, 0x87, 0x00};
+    const unsigned char Super_Mario[] = {0x33, 0x33, 0x3F, 0x33, 0x3F, 0x2F, 0x31, 0x3F, 0x33, 0x7F, 0x2A, 0x7F, 0x2F, 0x5F, 0x2A, 0x5F, 0x27, 0x5F, 0x2C, 0x3F, 0x3E, 0x3F, 0x3D, 0x2C, 0x3F, 0x2A, 0x33, 0x36, 0x38, 0x3F, 0x34, 0x36, 0x3F, 0x2F, 0x25, 0x2E, 0x5F, 0x00};
+    const unsigned char White_Ark[] = {0x22, 0x24, 0x45, 0x4A, 0x47, 0x25, 0x24, 0x22, 0x24, 0x25, 0x24, 0x22, 0x20, 0x42, 0x3F, 0x2A, 0x2A, 0x2A, 0x2A, 0x20, 0x25, 0x27, 0x2A, 0x27, 0x2A, 0x2C, 0x2B, 0x2A, 0x2A, 0x00};
+    const unsigned char Kokoro_Umi[] = {0x2A, 0x20, 0x21, 0x47, 0x21, 0x20, 0x2C, 0x4A, 0x27, 0x48, 0x4A, 0x2A, 0x20, 0x21, 0x47, 0x21, 0x20, 0x2C, 0x4A, 0x27, 0x48, 0x4A, 0x2A, 0x20, 0x21, 0x47, 0x21, 0x20, 0x2C, 0x4A, 0x27, 0x48, 0x4A, 0x00};
     current_pointer = (unsigned char) &demo_song;
 
     bool song_chosen = false;
@@ -156,7 +173,16 @@ void main_loop(void){
     timer = 0;
 
     while (true){
-        // loop_counter ++;
+
+        // anytime, press * to quit
+        if (get_key() == '*'){
+            state = START;
+            P6OUT &= ~(BIT4|BIT3|BIT2|BIT1);
+            Graphics_clearDisplay(&g_sContext);
+            TurnBuzzerOff();
+            timer = 0;
+
+        }
 
         switch (state) {
 
@@ -185,14 +211,20 @@ void main_loop(void){
 
 
             case MENU : {
-
+                // press number to choose song
+                // can choose to not play and only listen to song
+                //      toggle this setting with '0'
+                //      LED 4 on means listen only, off means play
+                //      only listen will skip count down
                 if (timer == 2){
                     Graphics_clearDisplay(&g_sContext);
-                    Graphics_drawStringCentered(&g_sContext, "Choose your song", AUTO_STRING_LENGTH, 48, 20, TRANSPARENT_TEXT);
-                    Graphics_drawStringCentered(&g_sContext, "1. Demo Song", 20, 48, 30, TRANSPARENT_TEXT);
-                    Graphics_drawStringCentered(&g_sContext, "2. BeBo Song", 20, 48, 40, TRANSPARENT_TEXT);
-                    Graphics_drawStringCentered(&g_sContext, "3. Hanabi", 20, 48, 50, TRANSPARENT_TEXT);
-                    Graphics_drawStringCentered(&g_sContext, "4. Demo Song", 20, 48, 60, TRANSPARENT_TEXT);
+                    Graphics_drawStringCentered(&g_sContext, "Choose your song", AUTO_STRING_LENGTH, 48, 10, TRANSPARENT_TEXT);
+                    Graphics_drawStringCentered(&g_sContext, "1. Demo Song", 20, 48, 20, TRANSPARENT_TEXT);
+                    Graphics_drawStringCentered(&g_sContext, "2. BeBo Song", 20, 48, 30, TRANSPARENT_TEXT);
+                    Graphics_drawStringCentered(&g_sContext, "3. Hanabi", 20, 48, 40, TRANSPARENT_TEXT);
+                    Graphics_drawStringCentered(&g_sContext, "4. Super Mario", 20, 48, 50, TRANSPARENT_TEXT);
+                    Graphics_drawStringCentered(&g_sContext, "5. White Ark", 20, 48, 60, TRANSPARENT_TEXT);
+                    Graphics_drawStringCentered(&g_sContext, "6. Kokoro Umi", 20, 48, 70, TRANSPARENT_TEXT);
                     Graphics_drawStringCentered(&g_sContext, "Press 0 to enjoy song", 20, 48, 85, TRANSPARENT_TEXT);
                     Graphics_flushBuffer(&g_sContext);
                 }
@@ -208,6 +240,18 @@ void main_loop(void){
                         break;
                     case '3':
                         selected_song = (unsigned char) &Hanabi;
+                        song_chosen = true;
+                        break;
+                    case '4':
+                        selected_song = (unsigned char) &Super_Mario;
+                        song_chosen = true;
+                        break;
+                    case '5':
+                        selected_song = (unsigned char) &White_Ark;
+                        song_chosen = true;
+                        break;
+                    case '6':
+                        selected_song = (unsigned char) &Kokoro_Umi;
                         song_chosen = true;
                         break;
                     case '0':
@@ -227,15 +271,13 @@ void main_loop(void){
                     unit_duration = 10;
                     enjoy_only = (P6OUT & BIT4) >> 4;
                     if (enjoy_only){
-                        unit_duration = 3;
+                        unit_duration = 2;
                         state = GAMING;
                     }
 
 
                     Graphics_clearDisplay(&g_sContext);
-
                 }
-
                 break;
             }
 
@@ -283,10 +325,17 @@ void main_loop(void){
 
 
 
-
+            // press key pad number coorsponding to LED number
+            //      can delay one note (eg. note 3 can still be pressed when note 4 is playing, but not note 5)
+            //      if note is not pressed in time, it will count towards a miss
+            //      3 miss will be lose
+            // flip all LEDs if you hit a not successfully
+            // display warning when you miss a note
+            // display a frequency map when playing
+            //      not display when only listening to song
             case GAMING : {
                // within duration of note
-                if (timer <= unit_duration){
+                if (timer <= unit_duration * duration){
 //                    LightLED(current_key - '0');
                     pressed_key = getKey();
                     // clear key
@@ -310,13 +359,13 @@ void main_loop(void){
                     // DisplayStatus(current_key, pressed_key, miss_num, current_pointer-&demo_song, debet_key);
                 }
 
-                else if (timer > unit_duration){
+                else if (timer > unit_duration * duration){
                     timer = 0;
                     TurnBuzzerOff();
                     Graphics_clearDisplay(&g_sContext);
 
 
-                    // // if debet_key != 0, lose 
+                    // if debet_key != 0, miss 
                     if (!enjoy_only && debet_key != 0){
 
                         // Display miss number
@@ -325,14 +374,15 @@ void main_loop(void){
                         Graphics_drawStringCentered(&g_sContext, miss_string, 10, 48, 35, TRANSPARENT_TEXT);
                         Graphics_flushBuffer(&g_sContext);
 
-                        
                         debet_key = 0;
                         miss_num ++;
-
+                        // 3 miss is lose
                         if (miss_num >= 3){
                             state = LOSE;
                             timer = 0;
+                            // where you lose
                             final_index = current_pointer - selected_song;
+                            // pointer to start of song
                             current_pointer = selected_song;
                             final_miss = miss_num;
                             miss_num = 0;
@@ -340,16 +390,15 @@ void main_loop(void){
                         }
                     }
 
-
-
+                    // if didn't press key immidiatly, it goes into debet
                     debet_key = current_key;
                     current_pointer ++;
-                    
+                    // 3 bit duration, 5 bit index
                     current_note_pack = *current_pointer;
-                    note_index = current_note_pack & 0x0f;
-                    duration = (current_note_pack & 0xf0) >> 4;
-                    // 0xf is no sound
-                    if (note_index == 0xf)
+                    note_index = current_note_pack & 0x1f;
+                    duration = (current_note_pack & 0xe0) >> 5;
+                    // 0x1f is no sound
+                    if (note_index == 0x1f)
                         note = 0;
                     else
                         note = NOTE_TABLE[note_index];
@@ -364,20 +413,22 @@ void main_loop(void){
                         debet_key = 0;
                         continue;
                     }
-
+                    // current key needed to press
                     current_key = getButton(note_index);
 
                     // sound buzzer
                     TurnBuzzerOn(note);
                     LightLED(current_key - '0');
+                    if (!enjoy_only)
+                        ShowHistogram(current_key - '0');
 
-                    ShowHistogram(current_key - '0');
-
-                    
                 }
             }
             break;
 
+
+            // display lose screen
+            // * to continue, # to restart
             case LOSE: {
                 if (timer == 5){
                     char miss_string[10] = "Miss:             ";
@@ -391,7 +442,7 @@ void main_loop(void){
                     Graphics_drawStringCentered(&g_sContext, miss_string, 10, 48, 35, TRANSPARENT_TEXT);
                     Graphics_drawStringCentered(&g_sContext, index_string, 10, 48, 45, TRANSPARENT_TEXT);                    Graphics_flushBuffer(&g_sContext);
                     Graphics_drawStringCentered(&g_sContext, "* to go back", AUTO_STRING_LENGTH, 48, 60, TRANSPARENT_TEXT);
-                    Graphics_drawStringCentered(&g_sContext, "# to restart", AUTO_STRING_LENGTH, 48, 80, TRANSPARENT_TEXT);
+                    Graphics_drawStringCentered(&g_sContext, "# to retry", AUTO_STRING_LENGTH, 48, 80, TRANSPARENT_TEXT);
                     Graphics_flushBuffer(&g_sContext);
                 }
 
@@ -421,7 +472,7 @@ void main_loop(void){
                     Graphics_drawStringCentered(&g_sContext, "YOU WIN !", AUTO_STRING_LENGTH, 48, 20, TRANSPARENT_TEXT);
                     Graphics_drawStringCentered(&g_sContext, miss_string, 10, 48, 40, TRANSPARENT_TEXT);
                     Graphics_drawStringCentered(&g_sContext, "* to go back", AUTO_STRING_LENGTH, 48, 60, TRANSPARENT_TEXT);
-                    Graphics_drawStringCentered(&g_sContext, "# to restart", AUTO_STRING_LENGTH, 48, 80, TRANSPARENT_TEXT);
+                    Graphics_drawStringCentered(&g_sContext, "# to retry", AUTO_STRING_LENGTH, 48, 80, TRANSPARENT_TEXT);
                     Graphics_flushBuffer(&g_sContext);
                 }
                 unsigned char key;
@@ -438,30 +489,10 @@ void main_loop(void){
             }
 
 
-
-
             default:
-
             break;
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
         }
-
-
 
     }
 
@@ -470,7 +501,12 @@ void main_loop(void){
 
 
 
-
+/***
+ * generate a frequency graph from current playing note
+ * current note is high (4)
+ * other notes are random (0-2)
+ * over 4 rows will cause display problems
+ */ 
 void ShowHistogram(unsigned char note_index){
     unsigned int len = sizeof(note_histogram)/sizeof(char);
     unsigned int i;
@@ -489,7 +525,6 @@ void ShowHistogram(unsigned char note_index){
     // note_histogram[1] = 0x23;
     // note_histogram[2] = 0x23;
     // note_histogram[2] = 0x23;
-
 
 
     
@@ -534,9 +569,9 @@ void ShowHistogram(unsigned char note_index){
 
 
 
-
-
-
+/**
+ * Light LED by index
+ */
 void LightLED(unsigned int led_index){
     P6OUT &= ~(BIT4|BIT3|BIT2|BIT1);
     if (led_index == 1)
@@ -595,7 +630,9 @@ void TurnBuzzerOff(void)
 }
 
 
-
+/**
+ * function for debuging
+ */
 void DisplayStatus(unsigned char key, unsigned char pressed_key, unsigned char miss_num, unsigned char song_index, unsigned char debet_key){
     Graphics_clearDisplay(&g_sContext);
     char key_string[10] = "Key:           ";
@@ -652,6 +689,9 @@ void InitTimerA2(void){
     _BIS_SR(GIE);
 }
 
+/**
+ * Interrupt Service Rutinue
+ */
 
 #pragma vector=TIMER2_A0_VECTOR
 __interrupt void TIMER2_A0_ISR (void)
@@ -659,21 +699,21 @@ __interrupt void TIMER2_A0_ISR (void)
 {
     // timer ++;
 
-     interval_counter ++;
-     if (interval_counter > 10){
-         interval_counter = 0;
-         timer ++;
+    interval_counter ++;
+    if (interval_counter > 10){
+        interval_counter = 0;
+        timer ++;
  //        P6OUT ^= (BIT4);
 
-     }
+    }
 }
 
 
 
 
+// Below is trash
 
-
-void configKeypad(void)
+void configKeypadMulti(void)
 {
     P1SEL &= ~(BIT5|BIT4|BIT3|BIT2);
     P2SEL &= ~(BIT5|BIT4);
@@ -693,7 +733,7 @@ void configKeypad(void)
 }
 
 
-unsigned int getKey(void)
+unsigned int getMultiKey(void)
 {
     unsigned int ret_val = 0;
 

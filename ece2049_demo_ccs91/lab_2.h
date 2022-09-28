@@ -15,6 +15,14 @@
 
 extern const unsigned int NOTE_TABLE[];
 
+//const unsigned int GRAPH_LEN;
+unsigned char note_histogram[];
+unsigned char line1[];
+unsigned char line2[];
+unsigned char line3[];
+unsigned char line4[];
+unsigned char line5[];
+
 
 
 
@@ -29,6 +37,7 @@ unsigned char getButton(unsigned char note_index);
 void main_loop(void);
 
 
+void ShowHistogram(unsigned char note_index);
 
 
 void LightLED(unsigned int led_index);

@@ -23,11 +23,18 @@ const unsigned int NOTE_TABLE[] =
          784,   // G
          831,   // A flat
          880,   // A
+         1300,
+         1500,
         };
 
 unsigned long timer = 0;
 unsigned long interval_counter = 0;
-
+const unsigned int GRAPH_LEN = 16;
+unsigned char note_histogram[GRAPH_LEN];
+unsigned char line1[GRAPH_LEN];
+unsigned char line2[GRAPH_LEN];
+unsigned char line3[GRAPH_LEN];
+unsigned char line4[GRAPH_LEN];
 
 
 
@@ -130,11 +137,21 @@ void main_loop(void){
     unsigned char final_miss = 0;
     unsigned char final_index = 0;
     
+    // for every note:
+    // bit 0-4: note index
+    // bit 5-7: note duration
+    // duration 765 | 43210 index
+
     const unsigned char demo_song[] = {0x11, 0x16, 0x15, 0x14, 0x13, 0x12, 0x11, 0x00};
-    const unsigned char bebo_song[] = {0x11, 0x26, 0x11, 0x26, 0x11, 0x26, 0x11, 0x26, 0x00};
+    const unsigned char bebo_song[] = {0x11, 0x26, 0x11, 0x26, 0x1C, 0x2D, 0x1C, 0x2D, 0x00};
+    const unsigned char Hanabi[] = {0x17, 0x1F, 0x1A, 0x2C, 0x18, 0x15, 0x13, 0x12, 0x15, 0x18, 0x3A, 0x1A, 0x18, 0x27, 0x2A, 0x18, 0x25, 0x15, 0x17, 0x1F, 0x1A, 0x2C, 0x18, 0x15, 0x13, 0x12, 0x15, 0x18, 0x3A, 0x1A, 0x18, 0x27, 0x2A, 0x18, 0x15, 0x15, 0x25, 0x47, 0x00};
     current_pointer = (unsigned char) &demo_song;
 
     bool song_chosen = false;
+    unsigned char* selected_song = 0;
+    bool enjoy_only = false;
+    unsigned char unit_duration = 1;
+
 
     timer = 0;
 
@@ -174,19 +191,28 @@ void main_loop(void){
                     Graphics_drawStringCentered(&g_sContext, "Choose your song", AUTO_STRING_LENGTH, 48, 20, TRANSPARENT_TEXT);
                     Graphics_drawStringCentered(&g_sContext, "1. Demo Song", 20, 48, 30, TRANSPARENT_TEXT);
                     Graphics_drawStringCentered(&g_sContext, "2. BeBo Song", 20, 48, 40, TRANSPARENT_TEXT);
-                    Graphics_drawStringCentered(&g_sContext, "3. Demo Song", 20, 48, 50, TRANSPARENT_TEXT);
+                    Graphics_drawStringCentered(&g_sContext, "3. Hanabi", 20, 48, 50, TRANSPARENT_TEXT);
                     Graphics_drawStringCentered(&g_sContext, "4. Demo Song", 20, 48, 60, TRANSPARENT_TEXT);
+                    Graphics_drawStringCentered(&g_sContext, "Press 0 to enjoy song", 20, 48, 85, TRANSPARENT_TEXT);
                     Graphics_flushBuffer(&g_sContext);
                 }
 
                 switch (getKey()){
                     case '1':
-                        current_pointer = (unsigned char) &demo_song;
+                        selected_song = (unsigned char*) &demo_song;
                         song_chosen = true;
                         break;
                     case '2':
-                        current_pointer = (unsigned char) &bebo_song;
+                        selected_song = (unsigned char*) &bebo_song;
                         song_chosen = true;
+                        break;
+                    case '3':
+                        selected_song = (unsigned char) &Hanabi;
+                        song_chosen = true;
+                        break;
+                    case '0':
+                        P6OUT = (P6OUT & ~BIT4) + (~P6OUT & BIT4);
+                        // enjoy_only = (P6OUT & BIT4) >> 4;
                         break;
                     default:
                         // current_pointer = (unsigned char) &demo_song;
@@ -197,6 +223,15 @@ void main_loop(void){
                     state = COUNT_DOWN;
                     timer = 0;
                     song_chosen = false;
+                    current_pointer = selected_song;
+                    unit_duration = 10;
+                    enjoy_only = (P6OUT & BIT4) >> 4;
+                    if (enjoy_only){
+                        unit_duration = 3;
+                        state = GAMING;
+                    }
+
+
                     Graphics_clearDisplay(&g_sContext);
 
                 }
@@ -251,7 +286,7 @@ void main_loop(void){
 
             case GAMING : {
                // within duration of note
-                if (timer <= 10){
+                if (timer <= unit_duration){
 //                    LightLED(current_key - '0');
                     pressed_key = getKey();
                     // clear key
@@ -275,19 +310,21 @@ void main_loop(void){
                     // DisplayStatus(current_key, pressed_key, miss_num, current_pointer-&demo_song, debet_key);
                 }
 
-                else if (timer > 10){
+                else if (timer > unit_duration){
                     timer = 0;
                     TurnBuzzerOff();
+                    Graphics_clearDisplay(&g_sContext);
 
-                    // if debet_key != 0, lose 
-                    if (debet_key != 0){
+
+                    // // if debet_key != 0, lose 
+                    if (!enjoy_only && debet_key != 0){
 
                         // Display miss number
-                        Graphics_clearDisplay(&g_sContext);
                         char miss_string[10] = "Miss:             ";
                         miss_string[7] = debet_key;
                         Graphics_drawStringCentered(&g_sContext, miss_string, 10, 48, 35, TRANSPARENT_TEXT);
                         Graphics_flushBuffer(&g_sContext);
+
                         
                         debet_key = 0;
                         miss_num ++;
@@ -295,8 +332,8 @@ void main_loop(void){
                         if (miss_num >= 3){
                             state = LOSE;
                             timer = 0;
-                            final_index = current_pointer-&demo_song;
-                            current_pointer = &demo_song;
+                            final_index = current_pointer - selected_song;
+                            current_pointer = selected_song;
                             final_miss = miss_num;
                             miss_num = 0;
                             continue;
@@ -311,13 +348,17 @@ void main_loop(void){
                     current_note_pack = *current_pointer;
                     note_index = current_note_pack & 0x0f;
                     duration = (current_note_pack & 0xf0) >> 4;
-                    note = NOTE_TABLE[note_index];
+                    // 0xf is no sound
+                    if (note_index == 0xf)
+                        note = 0;
+                    else
+                        note = NOTE_TABLE[note_index];
 
                     // if at end of song, win
                     if (current_note_pack == 0){
                         state = WIN;
                         timer = 0;
-                        current_pointer = &demo_song;
+                        current_pointer = selected_song;
                         final_miss = miss_num;
                         miss_num = 0;
                         debet_key = 0;
@@ -330,6 +371,7 @@ void main_loop(void){
                     TurnBuzzerOn(note);
                     LightLED(current_key - '0');
 
+                    ShowHistogram(current_key - '0');
 
                     
                 }
@@ -341,24 +383,28 @@ void main_loop(void){
                     char miss_string[10] = "Miss:             ";
                     char index_string[10] = "Index:           ";
                     miss_string[7] = final_miss+'0';
-                    index_string[7] = final_index+'0';
+                    if (final_index > 9)
+                        index_string[6] = final_index / 10 + '0';
+                    index_string[7] = final_index % 10 + '0';
                     Graphics_clearDisplay(&g_sContext);
                     Graphics_drawStringCentered(&g_sContext, "YOU LOSE", AUTO_STRING_LENGTH, 48, 25, TRANSPARENT_TEXT);
                     Graphics_drawStringCentered(&g_sContext, miss_string, 10, 48, 35, TRANSPARENT_TEXT);
                     Graphics_drawStringCentered(&g_sContext, index_string, 10, 48, 45, TRANSPARENT_TEXT);                    Graphics_flushBuffer(&g_sContext);
-                    Graphics_drawStringCentered(&g_sContext, "# to restart", AUTO_STRING_LENGTH, 48, 65, TRANSPARENT_TEXT);
+                    Graphics_drawStringCentered(&g_sContext, "* to go back", AUTO_STRING_LENGTH, 48, 60, TRANSPARENT_TEXT);
+                    Graphics_drawStringCentered(&g_sContext, "# to restart", AUTO_STRING_LENGTH, 48, 80, TRANSPARENT_TEXT);
                     Graphics_flushBuffer(&g_sContext);
                 }
 
-            
-
                 unsigned char key;
                 key = get_key();
-                if (key == '#'){
+                if (key == '*'){
                     state = START;
                     timer = 0;
                 }
-
+                if (key == '#'){
+                    state = COUNT_DOWN;
+                    timer = 0;
+                }
                 break;
             }
 
@@ -374,7 +420,7 @@ void main_loop(void){
                     Graphics_clearDisplay(&g_sContext);
                     Graphics_drawStringCentered(&g_sContext, "YOU WIN !", AUTO_STRING_LENGTH, 48, 20, TRANSPARENT_TEXT);
                     Graphics_drawStringCentered(&g_sContext, miss_string, 10, 48, 40, TRANSPARENT_TEXT);
-                    Graphics_drawStringCentered(&g_sContext, "* to continue", AUTO_STRING_LENGTH, 48, 60, TRANSPARENT_TEXT);
+                    Graphics_drawStringCentered(&g_sContext, "* to go back", AUTO_STRING_LENGTH, 48, 60, TRANSPARENT_TEXT);
                     Graphics_drawStringCentered(&g_sContext, "# to restart", AUTO_STRING_LENGTH, 48, 80, TRANSPARENT_TEXT);
                     Graphics_flushBuffer(&g_sContext);
                 }
@@ -385,7 +431,7 @@ void main_loop(void){
                     timer = 0;
                 }
                 if (key == '#'){
-                    state = START;
+                    state = COUNT_DOWN;
                     timer = 0;
                 }
                 break;
@@ -425,6 +471,67 @@ void main_loop(void){
 
 
 
+void ShowHistogram(unsigned char note_index){
+    unsigned int len = sizeof(note_histogram)/sizeof(char);
+    unsigned int i;
+    unsigned char value = 0;
+    unsigned char pixel = '#';
+    unsigned char blank = ' ';
+    for (i=0; i<len; i++){
+        note_histogram[i] = rand() % 3 + '0';
+        // if (i != 0)
+        //     note_histogram[i] = (note_histogram[i-1] + note_histogram[i])/2;
+        // note_histogram[i] = i + '0';
+    }
+    unsigned char hist_index = note_index;
+    note_histogram[hist_index] = 4 + '0';
+    // note_histogram[0] = 0x23;
+    // note_histogram[1] = 0x23;
+    // note_histogram[2] = 0x23;
+    // note_histogram[2] = 0x23;
+
+
+
+    
+//    Graphics_drawStringCentered(&g_sContext, note_histogram, len, 48, 42, TRANSPARENT_TEXT);
+
+    for (i=0; i<len; i++) {
+        value = note_histogram[i]-'0';
+
+        // if (value >= 5)
+        //     line5[i] = pixel;
+        // else
+        //     line5[i] = blank;
+        if (value >= 4)
+            line4[i] = pixel;
+        else
+            line4[i] = blank;
+        if (value >= 3)
+            line3[i] = pixel;
+        else
+            line3[i] = blank;
+        if (value >= 2)
+            line2[i] = pixel;
+        else
+            line2[i] = blank;
+        if (value >= 1)
+            line1[i] = pixel;
+        else
+            line1[i] = blank;
+        
+    }
+    Graphics_drawStringCentered(&g_sContext, line1, len, 48, 86, TRANSPARENT_TEXT);
+    Graphics_drawStringCentered(&g_sContext, line2, len, 48, 78, TRANSPARENT_TEXT);
+    Graphics_drawStringCentered(&g_sContext, line3, len, 48, 70, TRANSPARENT_TEXT);
+    Graphics_drawStringCentered(&g_sContext, line4, len, 48, 62, TRANSPARENT_TEXT);
+    // Graphics_drawStringCentered(&g_sContext, line5, len, 48, 54, TRANSPARENT_TEXT);
+
+    Graphics_flushBuffer(&g_sContext);
+
+
+}
+
+
 
 
 
@@ -454,6 +561,10 @@ void LightLED(unsigned int led_index){
  */
 void TurnBuzzerOn(unsigned int frequency)
 {
+    if (frequency == 0){
+        TurnBuzzerOff();
+        return;
+    }
     // Initialize PWM output on P3.5, which corresponds to TB0.5
     P3SEL |= BIT5; // Select peripheral output mode for P3.5
     P3DIR |= BIT5;

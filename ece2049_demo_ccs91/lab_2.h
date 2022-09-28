@@ -49,7 +49,9 @@ void InitClock(void);
 void InitTimerA2(void);
 
 
-
+void configKeypad(void);
+unsigned int getKey(void);
+void configUserLED(char inbits);
 
 
 

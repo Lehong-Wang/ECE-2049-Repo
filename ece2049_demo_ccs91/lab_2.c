@@ -669,3 +669,90 @@ __interrupt void TIMER2_A0_ISR (void)
 }
 
 
+
+
+
+
+void configKeypad(void)
+{
+    P1SEL &= ~(BIT5|BIT4|BIT3|BIT2);
+    P2SEL &= ~(BIT5|BIT4);
+    P4SEL &= ~(BIT3);
+
+    P2DIR |= (BIT5|BIT4);
+    P1DIR |= BIT5;
+    P2OUT |= (BIT5|BIT4);
+    P1OUT |= BIT5;
+
+    P1DIR &= ~(BIT2|BIT3|BIT4);
+    P4DIR &= ~(BIT3);
+    P4REN |= (BIT3);
+    P1REN |= (BIT2|BIT3|BIT4);
+    P4OUT |= (BIT3);
+    P1OUT |= (BIT2|BIT3|BIT4);
+}
+
+
+unsigned int getKey(void)
+{
+    unsigned int ret_val = 0;
+
+    P1OUT &= ~BIT5;
+    P2OUT |= (BIT5|BIT4);
+    // Now check value from each rows
+    if ((P4IN & BIT3)==0)
+        ret_val &= BIT0;
+    if ((P1IN & BIT2)==0)
+        ret_val &= BIT3;
+    if ((P1IN & BIT3)==0)
+        ret_val &= BIT6;
+    if ((P1IN & BIT4)==0)
+        ret_val &= BIT0 << 9;
+    P1OUT |= BIT5;
+
+    P2OUT &= ~BIT4;
+    // Now check value from each rows
+    if ((P4IN & BIT3)==0)
+        ret_val &= BIT1;
+    if ((P1IN & BIT2)==0)
+        ret_val &= BIT4;
+    if ((P1IN & BIT3)==0)
+        ret_val &= BIT7;
+    if ((P1IN & BIT4)==0)
+        ret_val &= BIT0 << 10;
+    P2OUT |= BIT4;
+
+    // Set Col1 = ?, Col2 = ? and Col3 = ?
+    P2OUT &= ~BIT5;
+    // Now check value from each rows
+    if ((P4IN & BIT3)==0)
+        ret_val &= BIT2;
+    if ((P1IN & BIT2)==0)
+        ret_val &= BIT5;
+    if ((P1IN & BIT3)==0)
+        ret_val &= BIT0 << 8;
+    if ((P1IN & BIT4)==0)
+        ret_val &= BIT0 << 11;
+    P2OUT |= BIT5;
+
+    return(ret_val);
+}
+
+
+void configUserLED(char inbits){
+    unsigned char mask = 0;
+
+    // Turn all LEDs off to start
+    P6OUT &= ~(BIT4|BIT3|BIT2|BIT1);
+
+    if (inbits & BIT0)
+        mask |= BIT4;   // Right most LED P6.4
+    if (inbits & BIT1)
+        mask |= BIT3;   // next most right LED P.3
+    if (inbits & BIT2)
+        mask |= BIT1;   // third most left LED P6.1
+    if (inbits & BIT3)
+        mask |= BIT2;   // Left most LED on P6.2
+    P6OUT |= mask;
+}
+

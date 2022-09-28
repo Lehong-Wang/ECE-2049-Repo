@@ -48,7 +48,6 @@ void DisplayStatus(unsigned char key, unsigned char pressed_key, unsigned char m
 void InitClock(void);
 void InitTimerA2(void);
 
-
 void configKeypadMulti(void);
 unsigned int getMultiKey(void);
 void configUserLED(char inbits);

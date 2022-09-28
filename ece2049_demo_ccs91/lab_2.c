@@ -49,8 +49,9 @@ unsigned char line4[GRAPH_LEN];
 
 
 
-/*
+/**
  * Function for testing
+ * parse the byte of note info into duration and note index
  * 4 bit duration, 4 bit index
  */
 void ParseSong(unsigned char* song_array_pointer){
@@ -68,10 +69,9 @@ void ParseSong(unsigned char* song_array_pointer){
         note = NOTE_TABLE[note_index];
 
         TurnBuzzerOn(note);
-        show_on_screne(note + 1000*duration);
+        show_on_screne(note + 1000*duration); // move duration 3 digit to the left
         swDelay(duration);
 
-//        break;
         // move to next packet
         current_pointer ++;
         current_note_pack = *current_pointer;
@@ -88,34 +88,12 @@ void ParseSong(unsigned char* song_array_pointer){
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// void check_lose(unsigned char debet_key){
-//     if (debet_key != 0){
-
-//     }
-// }
-
-
 // assign note to button 1-4
 unsigned char getButton(unsigned char note_index) {
     unsigned char button_num = 0;
     button_num = note_index % 4 + 1;
     return button_num + '0';
 }
-
 
 
 
@@ -130,8 +108,6 @@ void main_loop(void){
 
    enum state state = START;
 
-
-    // unsigned int loop_counter = 0;
 
     unsigned char* current_pointer;
     unsigned char current_note_pack = *current_pointer;
@@ -185,7 +161,6 @@ void main_loop(void){
         }
 
         switch (state) {
-
 
             // Welcome screen
             // press * to continue
@@ -336,7 +311,7 @@ void main_loop(void){
             case GAMING : {
                // within duration of note
                 if (timer <= unit_duration * duration){
-//                    LightLED(current_key - '0');
+                //    LightLED(current_key - '0');
                     pressed_key = getKey();
                     // clear key
                     if (pressed_key != 0){
@@ -345,7 +320,7 @@ void main_loop(void){
                                 current_key = 0;
                                 // reverse all LED
                                 P6OUT = (P6OUT & ~(BIT4|BIT3|BIT2|BIT1)) + (~P6OUT & (BIT4|BIT3|BIT2|BIT1));
-//                                P6OUT |= (BIT4|BIT3|BIT2|BIT1);
+                            //    P6OUT |= (BIT4|BIT3|BIT2|BIT1);
                             }
                         }
                         else {
@@ -501,7 +476,7 @@ void main_loop(void){
 
 
 
-/***
+/**
  * generate a frequency graph from current playing note
  * current note is high (4)
  * other notes are random (0-2)
@@ -593,6 +568,7 @@ void LightLED(unsigned int led_index){
 /*
  * Enable a PWM-controlled buzzer on P3.5
  * This function makes use of TimerB0.
+ * turn buzzer of for frequency = 0 (scilent note)
  */
 void TurnBuzzerOn(unsigned int frequency)
 {
@@ -631,7 +607,8 @@ void TurnBuzzerOff(void)
 
 
 /**
- * function for debuging
+ * Function for debuging
+ * Show status info on screen
  */
 void DisplayStatus(unsigned char key, unsigned char pressed_key, unsigned char miss_num, unsigned char song_index, unsigned char debet_key){
     Graphics_clearDisplay(&g_sContext);
@@ -676,6 +653,10 @@ void InitClock(void){
 }
 
 
+/**
+ * Set Timer A2 to 32768 Hz
+ * Interrupt every 0.01 seconds
+ */
 void InitTimerA2(void){
 //    TA2CTL = 0x0296; // SMCLK, /2, clear, enable interrupt
 //    TA2CCTL0 |= 0x0010; // enable interrupt
@@ -691,14 +672,13 @@ void InitTimerA2(void){
 
 /**
  * Interrupt Service Rutinue
+ * timer increase every 0.1 seconds
  */
-
 #pragma vector=TIMER2_A0_VECTOR
 __interrupt void TIMER2_A0_ISR (void)
 
 {
     // timer ++;
-
     interval_counter ++;
     if (interval_counter > 10){
         interval_counter = 0;

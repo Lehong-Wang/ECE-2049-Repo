@@ -1,6 +1,7 @@
 {
   "files.associations": {
     "chrono": "c",
-    "random": "c"
+    "random": "c",
+    "lab_3.h": "c"
   }
 }

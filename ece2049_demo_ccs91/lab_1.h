@@ -30,7 +30,7 @@ void modify_array();
 bool check_win();
 bool check_lose();
 
-void full_lab_1_code(void);
+void mainLoopLab1(void);
 
 
 

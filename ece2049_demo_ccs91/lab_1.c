@@ -232,7 +232,7 @@ bool check_lose(){
   This chuck of code is the whole lab 1 
   call this function in main to run
  */
-void full_lab_1_code(){
+void mainLoopLab1(){
 
     enum state{
         START, MAKE_ALIAN, COUNT_DOWN, GAMING, WIN, LOSE

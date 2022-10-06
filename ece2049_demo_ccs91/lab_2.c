@@ -38,8 +38,8 @@ const unsigned int NOTE_TABLE[] =
 
         };
 
-unsigned long timer = 0;
-unsigned long interval_counter = 0;
+// unsigned long timer = 0;
+// unsigned long interval_counter = 0;
 const unsigned int GRAPH_LEN = 16;
 unsigned char note_histogram[GRAPH_LEN];
 unsigned char line1[GRAPH_LEN];
@@ -47,6 +47,13 @@ unsigned char line2[GRAPH_LEN];
 unsigned char line3[GRAPH_LEN];
 unsigned char line4[GRAPH_LEN];
 
+
+// unsigned char note_histogram[];
+// unsigned char line1[];
+// unsigned char line2[];
+// unsigned char line3[];
+// unsigned char line4[];
+// unsigned char line5[];
 
 
 /**
@@ -89,7 +96,7 @@ void ParseSong(unsigned char* song_array_pointer){
 
 
 // assign note to button 1-4
-unsigned char getButton(unsigned char note_index) {
+unsigned char getButtonFromNote(unsigned char note_index) {
     unsigned char button_num = 0;
     button_num = note_index % 4 + 1;
     return button_num + '0';
@@ -100,7 +107,7 @@ unsigned char getButton(unsigned char note_index) {
 
 
 
-void main_loop(void){
+void mainLoopLab2(void){
 
     enum state {
         START, MENU, COUNT_DOWN, GAMING, LOSE, WIN,
@@ -389,7 +396,7 @@ void main_loop(void){
                         continue;
                     }
                     // current key needed to press
-                    current_key = getButton(note_index);
+                    current_key = getButtonFromNote(note_index);
 
                     // sound buzzer
                     TurnBuzzerOn(note);
@@ -560,6 +567,10 @@ void LightLED(unsigned int led_index){
         
 }
 
+void LEDOFF(void){
+    P6OUT &= ~(BIT4|BIT3|BIT2|BIT1);
+}
+
 
 
 
@@ -663,7 +674,6 @@ void InitTimerA2(void){
 //    TA2CCR0 = 1000; // 1000 tick per interrupt, 1 ms per interrupt
 //    _BIS_SR(GIE); // enable interrupt
 
-
     TA2CTL = TASSEL_1 + MC_1 + ID_0;
     TA2CCR0 = 327;       // 327+1 = 328 ACLK tics = ~1/100 seconds
     TA2CCTL0 = CCIE;
@@ -680,7 +690,8 @@ __interrupt void TIMER2_A0_ISR (void)
 {
     // timer ++;
     interval_counter ++;
-    if (interval_counter > 10){
+    total_time_count ++;
+    if (interval_counter >= 10){
         interval_counter = 0;
         timer ++;
  //        P6OUT ^= (BIT4);

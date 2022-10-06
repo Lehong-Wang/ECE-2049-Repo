@@ -17,14 +17,11 @@ extern unsigned long interval_counter;
  // Temperature Sensor Calibration = Reading at 30 degrees C is stored at addr 1A1Ah
  // See end of datasheet for TLV table memory mapping
  #define CALADC12_15V_30C  *((unsigned int *)0x1A1A)
-//  #define CALADC12_15V_30C  (unsigned int)0x1A1A
  // Temperature Sensor Calibration = Reading at 85 degrees C is stored at addr 1A1Ch                                            //See device datasheet for TLV table memory mapping
  #define CALADC12_15V_85C  *((unsigned int *)0x1A1C)
-//  #define CALADC12_15V_85C  (unsigned int) 0x1A1C
 
 
-// unsigned long time_count;
-
+// struct to store parsed time information
 struct Time {
  unsigned long total_time;
  unsigned int seconds;
@@ -32,7 +29,6 @@ struct Time {
  unsigned int hours;
  unsigned int days;
  unsigned int months;
-//  char month[10];
 };
 
 
@@ -52,7 +48,6 @@ void displayNewTemp(bool is_C);
 int getScrollADC(void);
 int mapToDateSelection(int adc, int index);
 
-
 struct Time parseTime(unsigned long total_time);
 long unparseTime(struct Time parsed_time);
 
@@ -65,17 +60,6 @@ void displayEditScreen(void);
 void mainLoopLab3(void);
 
 char* intToChar(int number);
-
-
-
-
-
-// void InitTimerA2(void);
-
-
-
-
-
 
 
 

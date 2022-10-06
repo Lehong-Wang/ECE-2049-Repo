@@ -3,12 +3,12 @@
 
 float degC_per_bit;
 
-int left_button_press_count = 0;
+int left_button_press_count = -1;     // press once will be 0
 
 const char MONTH_STR[12][4] = {
   "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
 };
-
+// number of days before the month
 const int MONTH_DAY[13] = {
   0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365,
 };
@@ -20,7 +20,11 @@ const int MONTH_DAY[13] = {
 
 
 
-
+/**
+ * @brief configure ONLY the temperature sensor
+ *        DO NOT USE THIS FUNCTION
+ *        for debuging only
+ */
 void configTemp(void){
   
   REFCTL0 &= ~REFMSTR;    // Reset REFMSTR to hand over control of
@@ -35,6 +39,11 @@ void configTemp(void){
  
 }
 
+/**
+ * @brief configure ONLY the scroll wheel
+ *        DO NOT USE THIS FUNCTION
+ *        for debuging only
+ */
 void configScroll(void){
   // Configure P8.0 as digital IO output and set it to 1
   // This supplied 3.3 volts across scroll wheel potentiometer
@@ -57,7 +66,9 @@ void configScroll(void){
   __delay_cycles(100);                      // delay to allow Ref to settle
 }
 
-
+/**
+ * @brief configure the S1-S4 buttons at the bottom left of the board
+ */
 void configButton(void){
   P7SEL &= ~BIT0;    // P7.0 S1
   P7DIR &= ~BIT0;    // input
@@ -82,39 +93,43 @@ void configButton(void){
 }
 
 
+/**
+ * @brief configre the ADC used for this lab
+ *        use this function ONLY
+ */
 void configADC(void){
-     // Configure P8.0 as digital IO output and set it to 1
-   // This supplied 3.3 volts across scroll wheel potentiometer
-   // See schematic at end or MSP-EXP430F5529 board users guide
-   P8SEL &= ~BIT0;
-   P8DIR |= BIT0;
-   P8OUT |= BIT0;
+  // Configure P8.0 as digital IO output and set it to 1
+  // This supplied 3.3 volts across scroll wheel potentiometer
+  // See schematic at end or MSP-EXP430F5529 board users guide
+  P8SEL &= ~BIT0;
+  P8DIR |= BIT0;
+  P8OUT |= BIT0;
+  // scroll wheel use P6.0 which is A0
+  P6SEL &= ~BIT0;
+  P6DIR &= ~BIT0;
 
-   P6SEL &= ~BIT0;
-   P6DIR &= ~BIT0;
 
-
-   REFCTL0 &= ~REFMSTR;                      // Reset REFMSTR to hand over control of
-                                             // internal reference voltages to
+   REFCTL0 &= ~REFMSTR; // Reset REFMSTR to hand over control of
+                        // internal reference voltages to
    	  	  	  	  	    // ADC12_A control registers
-   // ADC12CTL0 = ADC12SHT0_9 | ADC12ON;
+  // ADC12CTL0 = ADC12SHT0_9 | ADC12ON;
   ADC12CTL0 = ADC12SHT0_9 | ADC12REFON | ADC12ON | ADC12MSC;     // Internal ref = 1.5V
 
 //    ADC12CTL1 = ADC12SHP | ADC12CONSEQ0 | ADC12CSTARTADD0;                     // Enable sample timer, sequence of conversion, start at 0
-   ADC12CTL1 = ADC12SHP | ADC12CONSEQ_1;                     // Enable sample timer, sequence of conversion, start at 0
+   ADC12CTL1 = ADC12SHP | ADC12CONSEQ_1;                     // Enable sample timer, sequence of conversion
 
-
-   ADC12MCTL0 = ADC12SREF_1 + ADC12INCH_10;  // ADC i/p ch A10 = temp sense
-  	                                    // ACD12SREF_1 = internal ref = 1.5v
-   // Use ADC12MEM0 register for conversion results
-   ADC12MCTL1 = ADC12SREF_0 + ADC12INCH_0 + ADC12EOS;   // ADC12INCH5 = Scroll wheel = A5
-                        // ACD12SREF_0 = Vref+ = Vcc
-//    ADC12MCTL2 = ADC12EOS;
+   ADC12MCTL0 = ADC12SREF_1 + ADC12INCH_10;   // ADC i/p ch A10 = temp sense
+  	                                          // ACD12SREF_1 = internal ref = 1.5v
+                                              // Use ADC12MEM0 register for conversion results
+   ADC12MCTL1 = ADC12SREF_0 + ADC12INCH_0 + ADC12EOS;   // ADC12INCH5 = Scroll wheel = A0
+                                                        // ACD12SREF_0 = Vref+ = Vcc
    __delay_cycles(100);                      // delay to allow Ref to settle
 }
 
 
-
+/**
+ * @brief wraper for all configs
+ */
 void configLab3(void){
   // configTemp();
   // configScroll();
@@ -122,8 +137,8 @@ void configLab3(void){
   configButton();
   ADC12CTL0 |= ADC12ENC;		    // Enable conversion
   __delay_cycles(100); 
-
 }
+
 
 /**
  * @brief Get the index of button pressed (1-4)
@@ -281,15 +296,18 @@ int getScrollADC(void){
 }
 
 
-
+/**
+ * @brief map ADC value to the current selected value range
+ * @param adc 
+ * @param index selection index
+ * @return int coorsponding value
+ */
 int mapToDateSelection(int adc, int index){
   int full_range = 0;
   int value = 0;
-  float fraction = 0;
   // edit select table: month, day, hour, minute, second
   const static int select_table[5] = {12, 31, 24, 60, 60};
   full_range = select_table[index];
-//  fraction = adc /
   
   value = full_range * (adc / 4096.0);
   // value 0 = day 1
@@ -338,71 +356,18 @@ struct Time parseTime(unsigned long total_time){
   // time 0 is day 1
   time ++;
 
+  // compare day number to each month and calculate month and date
   int i = 0;
   for (i=0; i<12; i++){
     // number of day less than month i+1
     if (time <= MONTH_DAY[i+1]){
       // month is month i
-      // strcpy(month, MONTH_STR[i]);
       month = i;
       // day is month i+1 - month i
       day = time - MONTH_DAY[i];
       break;
     }
   }
-
-  // if (time <= 31){
-  //   strcpy(month, "Jan");
-  //   day = time;
-  // }
-  // else if (time <= 59){
-  //   strcpy(month, "Feb");
-  //   day = time - 31;
-  // }
-  // else if (time <= 90){
-  //   strcpy(month, "Mar");
-  //   day = time - 59;
-  // }
-  // else if (time <= 120){
-  //   strcpy(month, "Apr");
-  //   day = time - 90;
-  // }
-  // else if (time <= 151){
-  //   strcpy(month, "May");
-  //   day = time - 120;
-  // }
-  // else if (time <= 181){
-  //   strcpy(month, "Jun");
-  //   day = time - 151;
-  // }
-  // else if (time <= 212){
-  //   strcpy(month, "Jul");
-  //   day = time - 181;
-  // }
-  // else if (time <= 243){
-  //   strcpy(month, "Aug");
-  //   day = time - 212;
-  // }
-  // else if (time <= 273){
-  //   strcpy(month, "Sep");
-  //   day = time - 243;
-  // }
-  // else if (time <= 304){
-  //   strcpy(month, "Oct");
-  //   day = time - 273;
-  // }
-  // else if (time <= 334){
-  //   strcpy(month, "Nov");
-  //   day = time - 304;
-  // }
-  // else if (time <= 365){
-  //   strcpy(month, "Dec");
-  //   day = time - 334;
-  // }
-  // else{
-  //   strcpy(month, "ERROR");
-  //   day = 0;
-  // }
 
   struct Time result_time;
   result_time.total_time = total_time;
@@ -446,7 +411,10 @@ long unparseTime(struct Time parsed_time){
 
 
 
-
+/**
+ * @brief Display month to second of given Time struct
+ * @param parsed_time 
+ */
 void displayWholeTime(struct Time parsed_time){
   Graphics_clearDisplay(&g_sContext);
 
@@ -487,6 +455,10 @@ void displayWholeTime(struct Time parsed_time){
 }
 
 
+/**
+ * @brief Display Date, shity code
+ * @param parsed_time 
+ */
 void displayDate(struct Time parsed_time) {
 
   Graphics_clearDisplay(&g_sContext);
@@ -506,11 +478,13 @@ void displayDate(struct Time parsed_time) {
   Graphics_drawStringCentered(&g_sContext, month_str, sizeof(month_str), 38, disp_y, TRANSPARENT_TEXT);
 
   Graphics_flushBuffer(&g_sContext);
-
 }
 
 
-
+/**
+ * @brief Display Time, shity code
+ * @param parsed_time 
+ */
 void displayTime(struct Time parsed_time) {
   Graphics_clearDisplay(&g_sContext);
 
@@ -541,7 +515,6 @@ void displayTime(struct Time parsed_time) {
   free(hour_str);
 
   Graphics_flushBuffer(&g_sContext);
-
 }
 
 
@@ -590,7 +563,7 @@ void displayEditScreen(void){
     static bool blink_hide = true;
     blink_hide = ! blink_hide;
     
-
+    // blink the selecting number
     if (blink_hide) {
       // make space not transparent will hide the text underneath
       Graphics_drawStringCentered(&g_sContext, blink_space, 5, blink_x, blink_y, 1);
@@ -601,10 +574,7 @@ void displayEditScreen(void){
       Graphics_flushBuffer(&g_sContext);
     }
 
-
-    // if left button
-    // save to total
-
+    // if press left button, save the value to global time count
     static int last_left_button_press_count = 0;
     // if left button is pressed, save and move on
     if (last_left_button_press_count != left_button_press_count){
@@ -613,7 +583,6 @@ void displayEditScreen(void){
       const int to_save_index = (selection_index+4)%5;
       switch (to_save_index) {
         case 0:
-          // strcpy(parsed_time.month, show_str);
           parsed_time.months = last_selected_num;
           break;
         case 1:
@@ -638,11 +607,8 @@ void displayEditScreen(void){
     refresh_time ++;
     last_selected_num = selected_num;
 
-
   }
 }
-
-
 
 
 
@@ -651,9 +617,6 @@ void displayEditScreen(void){
 // ############################### Main Function ##################################
 
 
-
-
-// set left count to 0 when enter edit mode
 
 
 void mainLoopLab3(void){
@@ -693,7 +656,7 @@ void mainLoopLab3(void){
     switch (state) {
 
       case DISPLAY: {
-        // rotate among four displays
+        // refresh every second
         if (timer > 10) {
           struct Time time = parseTime(total_time_count/100);
           switch (display_state) {
@@ -715,54 +678,20 @@ void mainLoopLab3(void){
               break;
           }
           timer = 0;
+          // rotate among four displays
           display_state = (display_state + 1) % 4;
         }
 
         break;
       }
 
-      case EDIT: {
+      case EDIT:
         displayEditScreen();
-
         break;
-      }
 
     }
-
-
-
-
-
-
-
-
   }
-
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 

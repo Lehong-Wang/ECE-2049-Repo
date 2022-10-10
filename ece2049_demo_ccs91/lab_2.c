@@ -674,8 +674,10 @@ void InitTimerA2(void){
 //    TA2CCR0 = 1000; // 1000 tick per interrupt, 1 ms per interrupt
 //    _BIS_SR(GIE); // enable interrupt
 
-    TA2CTL = TASSEL_1 + MC_1 + ID_0;
-    TA2CCR0 = 327;       // 327+1 = 328 ACLK tics = ~1/100 seconds
+    // TA2CTL = TASSEL_1 + MC_1 + ID_0;    // ACLK
+    TA2CTL = TASSEL_1 + MC_1 + ID_0;    // SMCLK
+    // TA2CCR0 = 327;       // 327+1 = 328 ACLK tics = ~1/100 seconds
+    TA2CCR0 = 49;       // 1/2000 s
     TA2CCTL0 = CCIE;
     _BIS_SR(GIE);
 }
@@ -689,14 +691,14 @@ __interrupt void TIMER2_A0_ISR (void)
 
 {
     // timer ++;
-    interval_counter ++;
+    // interval_counter ++;
     total_time_count ++;
-    if (interval_counter >= 10){
-        interval_counter = 0;
-        timer ++;
- //        P6OUT ^= (BIT4);
+//     if (interval_counter >= 10){
+//         interval_counter = 0;
+//         timer ++;
+//  //        P6OUT ^= (BIT4);
 
-    }
+//     }
 }
 
 

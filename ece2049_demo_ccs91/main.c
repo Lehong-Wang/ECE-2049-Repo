@@ -7,6 +7,7 @@
 
 #include "lab_2.h"
 #include "lab_3.h"
+#include "lab_4.h"
 // Function Prototypes
 void init(void);
 
@@ -21,9 +22,10 @@ void main(void)
 {
   init();
   InitTimerA2();
-  configLab3();
+  configLab4();
+  DACInit();
 
-  mainLoopLab3();
+  mainLoopLab4();
 }
 
 

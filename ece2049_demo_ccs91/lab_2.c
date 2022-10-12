@@ -677,7 +677,7 @@ void InitTimerA2(void){
     // TA2CTL = TASSEL_1 + MC_1 + ID_0;    // ACLK
     TA2CTL = TASSEL_1 + MC_1 + ID_0;    // SMCLK
     // TA2CCR0 = 327;       // 327+1 = 328 ACLK tics = ~1/100 seconds
-    TA2CCR0 = 49;       // 1/2000 s
+    TA2CCR0 = 1047;       // 1/1000 s
     TA2CCTL0 = CCIE;
     _BIS_SR(GIE);
 }

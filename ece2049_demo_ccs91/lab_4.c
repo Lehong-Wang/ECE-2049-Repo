@@ -88,7 +88,7 @@ void generateWave(int index){
 
   const long time = total_time_count;
   // timer frequency / resolution in Hz
-  const int timer_frequency = 2000;
+  const int timer_frequency = 1000;
 
   switch(index){
     case 1:
